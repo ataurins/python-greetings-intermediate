@@ -1,8 +1,8 @@
 pipeline{
     agent any
-    triggers{
-       pollSCM('*/1 * * * *') 
-    }
+    // triggers{
+    //    pollSCM('*/1 * * * *') 
+    // }
     parameters {
         choice(name: 'DEPLOY_TO_PRODUCTION', choices: ['Yes', 'No'], description: "Would you like to deploy application to PRD as well?")
     }
@@ -65,6 +65,11 @@ pipeline{
         }
     }
     post {
+        always {
+            script {
+                discordSend description: "Jenkins Pipeline Build - Artis", footer: "Footer Text", link: env.BUILD_URL, result: currentBuild.currentResult, title: JOB_NAME, webhookURL: "https://discord.com/api/webhooks/1139668547946168561/ZHUF4ww-auCPadJknX44uhBS1utUe0SzBEWXrVmMZVFujKLfMY6a6l7L33fEQd9G-_4p"
+            }
+        }
         failure {
             script {
                 echo "Pipeline failure.. Sending notification"
