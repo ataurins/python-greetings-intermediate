@@ -11,7 +11,7 @@ pipeline{
         stage('build-app'){
             steps {
                 echo "Build python-greetings-app"
-                buold("ataurins/python-greetings-app:latest", "Dockerfile")
+                build("ataurins/python-greetings-app:latest", "Dockerfile")
             }
         }
         stage('deploy-dev'){
