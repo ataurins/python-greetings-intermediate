@@ -33,12 +33,14 @@ pipeline{
             }
         }
        stage('approval'){
-        agent none
+            agent none
             steps {
-                echo "Manual approval before deployment to PROD.."
+                script {
+                    echo "Manual approval before deployment to PROD.."
                 def deploymentSleepDelay = input id: 'Deploy', message: 'Should we procced with deployment to production?', submitter:'artis,admin',
-                                            parameters: [choice(choices: ['0','1', '5', '10'], description: 'Minutes to delay (sleep) deployment:', name: 'deployDelay')]
-                sleep time: deployDelay.toInteger(), unit: 'MINUTES'
+                                            parameters: [choice(choices: ['0','1', '5', '10'], description: 'Minutes to delay (sleep) deployment:', name: 'DEPLOY_DELAY')]
+                sleep time: deploymentSleepDelay.toInteger(), unit: 'MINUTES'
+                }
             }
         }
         stage('deploy-prod'){
