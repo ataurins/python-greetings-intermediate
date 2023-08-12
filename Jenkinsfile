@@ -13,7 +13,9 @@ pipeline{
     stages {
         stage('build-app'){
             steps {
-                build("ataurins/python-greetings-app:latest", "Dockerfile")
+                script {
+                    build("ataurins/python-greetings-app:latest", "Dockerfile")
+                }
             }
         }
         stage('deploy-dev'){
@@ -35,8 +37,8 @@ pipeline{
             steps {
                 echo "Manual approval before deployment to PROD.."
                 def deploymentSleepDelay = input id: 'Deploy', message: 'Should we procced with deployment to production?', submitter:'artis,admin',
-                                            parameters: [choice(choices: ['0','1', '5', '10'], description: 'Minutes to delay (sleep) deployment:', name: 'DEPLOYMENT_DELAY')]
-                sleep time: DEPLOYMENT_DELAY.toInteger(), unit: 'MINUTES'
+                                            parameters: [choice(choices: ['0','1', '5', '10'], description: 'Minutes to delay (sleep) deployment:', name: 'deployDelay')]
+                sleep time: deployDelay.toInteger(), unit: 'MINUTES'
             }
         }
         stage('deploy-prod'){
