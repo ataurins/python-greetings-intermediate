@@ -3,6 +3,9 @@ pipeline{
     triggers{
        pollSCM('*/1 * * * *') 
     }
+    parameters {
+        choice(name: 'DEPLOY_TO_PRODUCTION', choices: ['Yes', 'No'], description: "Would you like to deploy application to PRD as well?")
+    }
     environment {
         DOCKER_PASSWORD = credentials('docker-password')
         DOCKER_USERNAME = credentials('docker-username')
@@ -16,7 +19,7 @@ pipeline{
         stage('deploy-dev'){
             steps {
                 script {
-                    deploy("DEV")
+                    deploy("dev")
                 }
             }
         }
@@ -27,22 +30,32 @@ pipeline{
                 }
             }
         }
-        stage('approval'){
+       stage('approval'){
+        agent none
             steps {
                 echo "Manual approval before deployment to PROD.."
+                def deploymentSleepDelay = input id: 'Deploy', message: 'Should we procced with deployment to production?', submitter:'artis,admin',
+                                            parameters: [choice(choices: ['0','1', '5', '10'], description: 'Minutes to delay (sleep) deployment:', name: 'DEPLOYMENT_DELAY')]
+                sleep time: DEPLOYMENT_DELAY.toInteger(), unit: 'MINUTES'
             }
         }
         stage('deploy-prod'){
             steps {
+                when {
+                    expression { params.DEPLOY_TO_PRODUCTION == 'Yes' }
+                }
                 script {
-                    deploy("PROD")
+                    deploy("prod")
                 }
             }
         }
         stage('test-prod'){
             steps {
+                when {
+                    expression { params.DEPLOY_TO_PRODUCTION == 'Yes' }
+                }
                 script {
-                    test("PrOD")
+                    test("PRD")
                 }
             }
         }
@@ -69,16 +82,21 @@ def build(String tag, String dockerfile){
     sh "docker push ${tag}"
 }
 
-def test(String env) {
-    echo "Testing of python-greetings-app on ${env} is starting.."
-    // docker run .. 
-    // docker exec
-    // docker cp
-    // extract report logic
-    // docker cleanup
+def test(String test_environment){
+    echo "Testing of python-greetings-app on ${test_environment} is starting.."
+    sh "docker run --network=host -t -d --name api_tests_runner_${test_environment} ataurins/api-tests-runner:latest"
+    try{
+        sh "docker exec api_tests_runner_${test_environment} cucumber PLATFORM=${test_environment} --format html --out test-output/report.html" 
+    }
+    finally {
+        sh "docker cp api_tests_runner_${test_environment}:/api-tests/test-output/report.html report_${test_environment}.html"
+        sh "docker rm -f api_tests_runner_${test_environment}"
+    }
 }
 
-def deploy(String env) {
-    echo "Deployment of python-greetings-app on ${env} is starting.."
-    // kubectl set image ..
+def deploy(String deploy_environment){
+    echo "Deployment of python-greetings-app on ${deploy_environment} is starting.."
+    sh "kubectl set image deployment python-greetings-${deploy_environment} python-greetings-${deploy_environment}-pod=ataurins/python-greetings-app:${GIT_COMMIT}"
+    sh "kubectl scale deploy python-greetings-${deploy_environment} --replicas=0"
+    sh "kubectl scale deploy python-greetings-${deploy_environment} --replicas=1"
 }
