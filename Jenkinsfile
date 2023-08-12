@@ -10,13 +10,11 @@ pipeline{
     stages {
         stage('build-app'){
             steps {
-                echo "Build python-greetings-app"
                 build("ataurins/python-greetings-app:latest", "Dockerfile")
             }
         }
         stage('deploy-dev'){
             steps {
-                echo "Deploying python-greetings-app to DEV.."
                 script {
                     deploy("DEV")
                 }
@@ -24,7 +22,6 @@ pipeline{
         }
         stage('test-dev'){
             steps {
-                echo "Testing python-greetings-app on DEV.. "
                 script {
                     test("DEV")
                 }
@@ -37,7 +34,6 @@ pipeline{
         }
         stage('deploy-prod'){
             steps {
-                echo "Deploying python-greetings-app to PROD.."
                 script {
                     deploy("PROD")
                 }
@@ -45,7 +41,6 @@ pipeline{
         }
         stage('test-prod'){
             steps {
-                echo "Testing python-greetings-app on PROD.. "
                 script {
                     test("PrOD")
                 }
